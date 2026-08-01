@@ -121,7 +121,7 @@ class ReviewShow(Resource):
 
     @marshal_with(reviewFields)
     def delete(self, id):
-        review = Review.query.filter_by(id=id)
+        review = Review.query.filter_by(id=id).first()
         if not review:
             abort(404, "Review not found")
         db.session.delete(review)
