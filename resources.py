@@ -56,7 +56,7 @@ class ShowResource(Resource):
     def get(self, id):
         show = Show.query.filter_by(id=id).first()
         if not show:
-            abort(404, "show not found")
+            abort(404, message="show not found")
         return show    
 
     @marshal_with(showFields)
@@ -104,7 +104,7 @@ class ReviewShow(Resource):
     def get(self, id):
         review = Review.query.filter_by(id=id).first()
         if not review:
-            abort(404, "Review not found")
+            abort(404, message="Review not found")
         return review    
 
     @marshal_with(reviewFields)
