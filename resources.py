@@ -2,6 +2,7 @@ from models import Show, Review
 from flask_restful import Resource, reqparse, fields, marshal_with, abort
 from extensions import db, api
 from sqlalchemy import func
+import requests
 
 
 showFields = {
@@ -64,7 +65,7 @@ class ShowResource(Resource):
         args = show_args.parse_args()
         show = Show.query.filter_by(id=id).first()
         if not show:
-            abort(404, "User not found.") 
+            abort(404, message="User not found.") 
         show.title = args["title"]    
         show.genre = args["genre"]    
         show.status = args["status"]    
@@ -77,7 +78,7 @@ class ShowResource(Resource):
     def delete(self, id):
         show = Show.query.filter_by(id=id).first()
         if not show:
-            abort(404, "User not found.") 
+            abort(404, message="User not found.") 
         db.session.delete(show)
         db.session.commit()  
         users = Show.query.all()
@@ -112,7 +113,7 @@ class ReviewShow(Resource):
         args = review_args.parse_args()
         review = Review.query.filter_by(id=id).first()
         if not review:
-            abort(404, "Review not found")
+            abort(404, meassage="Review not found")
         review.rating = args["rating"]
         review.notes = args["notes"]
         db.session.add(review)
@@ -135,7 +136,7 @@ class ShowStatsResource(Resource):
         avg_rating = db.session.query(func.avg(Review.rating)).filter(Review.show_id == show_id).scalar()
         if avg_rating is None:
             return {"show_id": show_id, "average_rating": None, "message": "No reviews yet"}, 200
-        return {"show_id": show_id, "average_rating": round(avg_rating, 2)}, 200
+        return {"show_id": show_id, "average_rating": round(float(avg_rating), 2)}, 200
         
         
 
@@ -143,6 +144,6 @@ api.add_resource(ShowlistResource, "/api/shows/")
 api.add_resource(ShowResource, "/api/shows/<int:id>")
 api.add_resource(ReviewListShow, "/api/shows/<int:show_id>/reviews")
 api.add_resource(ReviewShow, "/api/reviews/<int:id>")
-api.add_resource(ShowStatsResource, "/api/show/<int:show_id>/stats")
+api.add_resource(ShowStatsResource, "/api/shows/<int:show_id>/stats")
 
 
