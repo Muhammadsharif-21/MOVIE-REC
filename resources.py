@@ -2,8 +2,11 @@ from models import Show, Review
 from flask_restful import Resource, reqparse, fields, marshal_with, abort
 from extensions import db, api
 from sqlalchemy import func
+import os
 import requests
+from dotenv import load_dotenv
 
+OMDB_KEY = os.getenv("OMDB_API_KEY") 
 
 showFields = {
     "id": fields.Integer,
@@ -43,6 +46,11 @@ class ShowlistResource(Resource):
     @marshal_with(showFields)
     def post(self):
         args = show_args.parse_args()
+        response = requests.get(f"http://www.omdbapi.com/?t={args['title']}&apikey={OMDB_KEY}")
+        data = response.json()
+        if data.get("Response") == "False":
+            abort(404, message="Show not found on OMDb")
+
         show = Show(title=args["title"], genre=args["genre"], status=args["status"])
         db.session.add(show)
         db.session.commit()
@@ -57,7 +65,7 @@ class ShowResource(Resource):
     def get(self, id):
         show = Show.query.filter_by(id=id).first()
         if not show:
-            abort(404, message="show not found")
+            abort(404, message="Show not found.")
         return show    
 
     @marshal_with(showFields)
@@ -65,7 +73,7 @@ class ShowResource(Resource):
         args = show_args.parse_args()
         show = Show.query.filter_by(id=id).first()
         if not show:
-            abort(404, message="User not found.") 
+            abort(404, message="Show not found.") 
         show.title = args["title"]    
         show.genre = args["genre"]    
         show.status = args["status"]    
@@ -78,11 +86,11 @@ class ShowResource(Resource):
     def delete(self, id):
         show = Show.query.filter_by(id=id).first()
         if not show:
-            abort(404, message="User not found.") 
+            abort(404, message="Show not found.") 
         db.session.delete(show)
         db.session.commit()  
-        users = Show.query.all()
-        return users
+        shows = Show.query.all()
+        return shows
 
 
 
@@ -95,10 +103,10 @@ class ReviewListShow(Resource):
     @marshal_with(reviewFields)
     def post(self, show_id):
         args = review_args.parse_args()
-        reviews = Review(show_id=show_id, rating=args["rating"], notes=args["notes"])
-        db.session.add(reviews)
+        review = Review(show_id=show_id, rating=args["rating"], notes=args["notes"])
+        db.session.add(review)
         db.session.commit()
-        return reviews, 201
+        return review, 201
     
 class ReviewShow(Resource):
     @marshal_with(reviewFields)
@@ -113,7 +121,7 @@ class ReviewShow(Resource):
         args = review_args.parse_args()
         review = Review.query.filter_by(id=id).first()
         if not review:
-            abort(404, meassage="Review not found")
+            abort(404, message="Review not found")
         review.rating = args["rating"]
         review.notes = args["notes"]
         db.session.add(review)
@@ -145,5 +153,3 @@ api.add_resource(ShowResource, "/api/shows/<int:id>")
 api.add_resource(ReviewListShow, "/api/shows/<int:show_id>/reviews")
 api.add_resource(ReviewShow, "/api/reviews/<int:id>")
 api.add_resource(ShowStatsResource, "/api/shows/<int:show_id>/stats")
-
-

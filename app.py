@@ -1,7 +1,12 @@
 from flask import Flask
 from extensions import db, api
+from dotenv import load_dotenv
+load_dotenv()
+
+
 app = Flask(__name__)
 import resources
+
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:ariari@127.0.0.1:3306/moviedb"
 db.init_app(app)
