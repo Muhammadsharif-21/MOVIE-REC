@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from extensions import db, api
 from dotenv import load_dotenv
 load_dotenv()
@@ -16,8 +16,8 @@ from models import Show, Review
 
 
 @app.route("/")
-def hello_world():
-    return "<h1>Hello, World!</h1>"
+def home():
+    return render_template("index.html")
 
 
 

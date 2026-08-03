@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Document</title>
+</head>
+<body>
+    <h1> My Movie/Anime Watchlist </h1>
+    <div id="shows-container"></div>
+</body>
+<script>
+  fetch('/api/shows/')
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById('shows-container');
+      const html = data.map(show => `
+      <div>
+        <h3>${show.title}</h3>
+        <p>Genre: ${show.genre}</p>
+        <p>Status: ${show.status}</p>
+        </div>
+        `).join('');
+        container.innerHTML = html;
+    });
+</script>
+</html>
