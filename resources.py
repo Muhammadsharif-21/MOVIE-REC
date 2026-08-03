@@ -66,6 +66,7 @@ class ShowlistResource(Resource):
     @marshal_with(showFields)
     def post(self):
         args = show_args.parse_args()
+
         existing = Show.query.filter_by(title=args['title']).first()
         if existing:
             abort(409, message="Show aleardy exists")
@@ -126,6 +127,8 @@ class ReviewListShow(Resource):
     @marshal_with(reviewFields)
     def post(self, show_id):
         args = review_args.parse_args()
+        if args["rating"] < 1 or args["rating"] > 10:
+            abort(400, message="Rating must be betweeen 1 and 10")
         review = Review(show_id=show_id, rating=args["rating"], notes=args["notes"])
         db.session.add(review)
         db.session.commit()
@@ -142,6 +145,8 @@ class ReviewShow(Resource):
     @marshal_with(reviewFields)
     def patch(self, id):
         args = review_args.parse_args()
+        if args["rating"] < 1 or args["rating"] > 10:
+            abort(400, message="Rating must be betweeen 1 and 10")
         review = Review.query.filter_by(id=id).first()
         if not review:
             abort(404, message="Review not found")
