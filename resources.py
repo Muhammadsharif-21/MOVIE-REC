@@ -56,13 +56,18 @@ class ShowlistResource(Resource):
 
         if sort:
             field_name = sort.lstrip("-")
-            column = getattr(Show, field_name, None)
-            if column is not None:
-                if sort.startswith("-"):
-                    query = query.order_by(column.desc())
+            descending = sort.startswith("-")
+            if field_name == "rating":
+                query = query.join(Review, Show.id == Review.show_id).group_by(Show.id)
+                if descending:
+                    query = query.order_by(func.avg(Review.rating).desc())
                 else:
-                    query = query.order_by(column)        
-
+                    query = query.order_by(func.avg(Review.rating))  
+            
+            else:
+                column = getattr(Show, field_name, None)
+                if column is not None:
+                    query = query.order_by(column.desc() if descending else column)
         shows = query.paginate(page=page, per_page=per_page, error_out=False)
         return shows.items
 
