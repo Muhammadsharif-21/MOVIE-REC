@@ -6,20 +6,57 @@
 <body>
     <h1> My Movie/Anime Watchlist </h1>
     <div id="shows-container"></div>
+    <h2> Add a Show </h2>
+    <input type="text" id="title-input" placeholder="Title">
+    <input type="text" id="genre-input" placeholder="Genre">
+    <input type="text" id="status-input" placeholder="Status (watching/completed/dropped)">
+    <button onclick="addShow()">Add Show</button>
 </body>
 <script>
-  fetch('/api/shows/')
+  function addShow() {
+    const title = document.getElementById('title-input').value;
+    const genre = document.getElementById('genre-input').value;
+    const status = document.getElementById('status-input').value;
+
+    fetch('/api/shows/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({title: title, genre: genre, status: status})
+    })
     .then(response => response.json())
     .then(data => {
-      const container = document.getElementById('shows-container');
-      const html = data.map(show => `
-      <div>
-        <h3>${show.title}</h3>
-        <p>Genre: ${show.genre}</p>
-        <p>Status: ${show.status}</p>
-        </div>
+      console.log('Added:', data);
+      loadShows();
+    });
+  }
+
+  function loadShows() {
+    fetch('/api/shows/')
+      .then(response => response.json())
+      .then(data => {
+        const container = document.getElementById('shows-container');
+        const html = data.map(show => `
+          <div>
+            <h3>${show.title}</h3>
+            <p>Genre: ${show.genre}</p>
+            <p>Status: ${show.status}</p>
+            <button onclick="deleteShow(${show.id})">Delete</button>
+          </div>
         `).join('');
         container.innerHTML = html;
+      });
+  }
+
+  loadShows();
+  function deleteShow(id) {
+    fetch(`/api/shows/${id}`, {
+      method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Deleted:', data);
+      loadShows();
     });
+  }
 </script>
 </html>

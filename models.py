@@ -8,7 +8,7 @@ class Show(db.Model):
     title = db.Column(db.String(150), nullable=False )
     genre = db.Column(db.String(20))
     status = db.Column(db.String(20), nullable=False)
-    reviews = db.relationship("Review", backref="show", lazy=True)
+    reviews = db.relationship("Review", backref="show", lazy=True, cascade="all, delete-orphan")
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
