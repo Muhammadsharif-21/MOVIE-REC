@@ -42,6 +42,7 @@ class ShowlistResource(Resource):
     def get(self):
         status = request.args.get("status")
         title = request.args.get("title")
+        sort = request.args.get("sort")
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 10, type=int)
 
@@ -52,6 +53,12 @@ class ShowlistResource(Resource):
 
         if title:
             query = query.filter(Show.title.ilike(f"%{title}%"))
+
+        if sort:
+            if sort.startswith("-"):
+                query = query.order_by(Show.title.desc())
+            else:
+                query = query.order_by(Show.title)        
 
         shows = query.paginate(page=page, per_page=per_page, error_out=False)
         return shows.items
