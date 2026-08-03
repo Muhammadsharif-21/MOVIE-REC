@@ -42,12 +42,15 @@ class ShowlistResource(Resource):
     @marshal_with(showFields)
     def get(self):
         status = request.args.get("status")
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 10, type=int)
+
         if status:
-            shows = Show.query.filter_by(status=status).all()
-            return shows
+            shows = Show.query.filter_by(status=status).paginate(page=page, per_page=per_page, error_out=False)
         else:
-            shows = Show.query.all()
-            return shows
+            shows = Show.query.paginate(page=page, per_page=per_page, error_out=False)
+
+        return shows.items
 
     @marshal_with(showFields)
     def post(self):
