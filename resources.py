@@ -37,19 +37,23 @@ review_args.add_argument("rating", type=int, required=True, help="Rating is requ
 review_args.add_argument("notes", type=str, required=False, help="Notes are required")
 
 
-
 class ShowlistResource(Resource):
     @marshal_with(showFields)
     def get(self):
         status = request.args.get("status")
+        title = request.args.get("title")
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 10, type=int)
 
-        if status:
-            shows = Show.query.filter_by(status=status).paginate(page=page, per_page=per_page, error_out=False)
-        else:
-            shows = Show.query.paginate(page=page, per_page=per_page, error_out=False)
+        query = Show.query
 
+        if status:
+            query = query.filter_by(status=status)
+
+        if title:
+            query = query.filter(Show.title.ilike(f"%{title}%"))
+
+        shows = query.paginate(page=page, per_page=per_page, error_out=False)
         return shows.items
 
     @marshal_with(showFields)
