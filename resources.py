@@ -5,6 +5,7 @@ from sqlalchemy import func
 import os
 import requests
 from dotenv import load_dotenv
+from flask import request
 
 OMDB_KEY = os.getenv("OMDB_API_KEY") 
 
@@ -40,12 +41,20 @@ review_args.add_argument("notes", type=str, required=False, help="Notes are requ
 class ShowlistResource(Resource):
     @marshal_with(showFields)
     def get(self):
-        shows = Show.query.all()
-        return shows
+        status = request.args.get("status")
+        if status:
+            shows = Show.query.filter_by(status=status).all()
+            return shows
+        else:
+            shows = Show.query.all()
+            return shows
 
     @marshal_with(showFields)
     def post(self):
         args = show_args.parse_args()
+        existing = Show.query.filter_by(title=args['title']).first()
+        if existing:
+            abort(409, message="Show aleardy exists")
         response = requests.get(f"http://www.omdbapi.com/?t={args['title']}&apikey={OMDB_KEY}")
         data = response.json()
         if data.get("Response") == "False":
