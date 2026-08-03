@@ -55,10 +55,13 @@ class ShowlistResource(Resource):
             query = query.filter(Show.title.ilike(f"%{title}%"))
 
         if sort:
-            if sort.startswith("-"):
-                query = query.order_by(Show.title.desc())
-            else:
-                query = query.order_by(Show.title)        
+            field_name = sort.lstrip("-")
+            column = getattr(Show, field_name, None)
+            if column is not None:
+                if sort.startswith("-"):
+                    query = query.order_by(column.desc())
+                else:
+                    query = query.order_by(column)        
 
         shows = query.paginate(page=page, per_page=per_page, error_out=False)
         return shows.items
