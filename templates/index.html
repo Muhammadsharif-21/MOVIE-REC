@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <title>Document</title>
+  <title>Document</title>
 </head>
+
 <body>
-    <h1> My Movie/Anime Watchlist </h1>
-    <div id="shows-container"></div>
-    <h2> Add a Show </h2>
-    <input type="text" id="title-input" placeholder="Title">
-    <input type="text" id="genre-input" placeholder="Genre">
-    <input type="text" id="status-input" placeholder="Status (watching/completed/dropped)">
-    <button onclick="addShow()">Add Show</button>
+  <h1> My Movie/Anime Watchlist </h1>
+  <div id="shows-container"></div>
+  <h2> Add a Show </h2>
+  <input type="text" id="title-input" placeholder="Title">
+  <input type="text" id="genre-input" placeholder="Genre">
+  <input type="text" id="status-input" placeholder="Status (watching/completed/dropped)">
+  <button onclick="addShow()">Add Show</button>
 </body>
 <script>
   function addShow() {
@@ -21,13 +23,13 @@
     fetch('/api/shows/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({title: title, genre: genre, status: status})
+      body: JSON.stringify({ title: title, genre: genre, status: status })
     })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Added:', data);
-      loadShows();
-    });
+      .then(response => response.json())
+      .then(data => {
+        console.log('Added:', data);
+        loadShows();
+      });
   }
 
   function loadShows() {
@@ -36,27 +38,117 @@
       .then(data => {
         const container = document.getElementById('shows-container');
         const html = data.map(show => `
-          <div>
-            <h3>${show.title}</h3>
-            <p>Genre: ${show.genre}</p>
-            <p>Status: ${show.status}</p>
-            <button onclick="deleteShow(${show.id})">Delete</button>
-          </div>
-        `).join('');
+  <div>
+    <h3>${show.title}</h3>
+
+    <input type="text" id="edit-title-${show.id}" value="${show.title}">
+    <input type="text" id="edit-genre-${show.id}" value="${show.genre}">
+    <input type="text" id="edit-status-${show.id}" value="${show.status}">
+    <button onclick="editShow(${show.id})">Save Changes</button>
+    <button onclick="deleteShow(${show.id})">Delete Show</button>
+
+    <div id="reviews-${show.id}"></div>
+
+    <input type="number" id="rating-input-${show.id}" placeholder="Rating 1-10">
+    <input type="text" id="notes-input-${show.id}" placeholder="Notes">
+    <button onclick="addReview(${show.id})">Add Review</button>
+      </div>
+      `).join('');
         container.innerHTML = html;
+        data.forEach(show => loadReviews(show.id));
       });
   }
 
   loadShows();
+
+  function editShow(id) {
+    const title = document.getElementById(`edit-title-${id}`).value;
+    const genre = document.getElementById(`edit-genre-${id}`).value;
+    const status = document.getElementById(`edit-status-${id}`).value;
+
+    fetch(`/api/shows/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: title, genre: genre, status: status })
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Updated:', data);
+        loadShows();
+      });
+  }
+
   function deleteShow(id) {
     fetch(`/api/shows/${id}`, {
       method: 'DELETE'
     })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Deleted:', data);
+        loadShows();
+      });
+  }
+
+  function loadReviews(showId) {
+    fetch(`/api/shows/${showId}/reviews`)
+    .then(response => response.json())
+    .then(reviews => {
+      const container = document.getElementById(`reviews-${showId}`);
+      const html = reviews.map(review => `
+        <div>
+          <p>Rating: ${review.rating} - ${review.notes}</p>
+          <input type="number" id="edit-rating-${review.id}" value="${review.rating}">
+          <input type="text" id="edit-notes-${review.id}" value="${review.notes}">
+          <button onclick="editReview(${review.id}, ${showId})">Save</button>
+          <button onclick="deleteReview(${review.id}, ${showId})">Delete</button>
+        </div>
+      `).join('');
+      container.innerHTML = html;
+    });
+  }
+
+  function addReview(showId) {
+    const rating = document.getElementById(`rating-input-${showId}`).value;
+    const notes = document.getElementById(`notes-input-${showId}`).value;
+
+    fetch(`/api/shows/${showId}/reviews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating: parseInt(rating), notes: notes })
+    })
     .then(response => response.json())
     .then(data => {
-      console.log('Deleted:', data);
-      loadShows();
+      console.log('Review added:', data);
+      loadReviews(showId);
+    });
+  }
+
+  function editReview(reviewId, showId) {
+    const rating = document.getElementById(`edit-rating-${reviewId}`).value;
+    const notes = document.getElementById(`edit-notes-${reviewId}`).value;
+
+    fetch(`/api/reviews/${reviewId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating: parseInt(rating), notes: notes })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Review updated:', data);
+      loadReviews(showId);
+    });
+  }
+
+  function deleteReview(reviewId, showId) {
+    fetch(`/api/reviews/${reviewId}`, {
+      method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Review deleted:', data);
+      loadReviews(showId);
     });
   }
 </script>
+
 </html>
