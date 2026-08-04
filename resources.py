@@ -13,7 +13,11 @@ showFields = {
     "id": fields.Integer,
     "title": fields.String,
     "genre": fields.String,
-    "status": fields.String
+    "status": fields.String,
+    "poster_url": fields.String,
+    "plot": fields.String,
+    "imbd_rating": fields.String,
+    "year": fields.String,
 }
 
 
@@ -75,7 +79,7 @@ class ShowlistResource(Resource):
     def post(self):
         args = show_args.parse_args()
 
-        existing = Show.query.filter_by(title=args['title']).first()
+        existing = Show.query.filter(Show.title.ilike(args['title'])).first()
         if existing:
             abort(409, message="Show aleardy exists")
         response = requests.get(f"http://www.omdbapi.com/?t={args['title']}&apikey={OMDB_KEY}")
@@ -83,7 +87,14 @@ class ShowlistResource(Resource):
         if data.get("Response") == "False":
             abort(404, message="Show not found on OMDb")
 
-        show = Show(title=args["title"], genre=args["genre"], status=args["status"])
+        show = Show(title=args["title"],
+                    genre=args["genre"],
+                    status=args["status"],
+                    poster_url=data.get("Poster"),
+                    plot=data.get("Plot"),
+                    imdb_rating=data.get("imdbRating"),
+                    year=data.get("Year"),
+                    )
         db.session.add(show)
         db.session.commit()
         return show, 201

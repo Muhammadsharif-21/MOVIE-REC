@@ -170,6 +170,22 @@
       margin-bottom: 18px;
     }
 
+    .stub-poster {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      background: var(--surface-raised);
+    }
+
+    .stub-plot {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+      margin: 8px 0 0;
+    }
+
     .stub-avg {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.72rem;
@@ -385,12 +401,15 @@
 
         const html = data.map(show => `
   <div class="stub">
+    ${show.poster_url && show.poster_url !== 'N/A' ? `<img src="${show.poster_url}" alt="${show.title} poster" class="stub-poster">` : ''}
     <div class="stub-head">
       <h3 class="stub-title">${show.title}</h3>
       <div class="stub-meta">
         <span class="badge">${show.genre}</span>
         <span class="badge status-${show.status}">${show.status}</span>
+        ${show.year && show.year !== 'N/A' ? `<span class="badge">${show.year}</span>` : ''}
       </div>
+      ${show.plot && show.plot !== 'N/A' ? `<p class="stub-plot">${show.plot}</p>` : ''}
       <div class="stub-avg" id="avg-${show.id}"></div>
     </div>
     <div class="stub-body">
