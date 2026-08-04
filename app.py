@@ -2,11 +2,13 @@ from flask import Flask, render_template
 from extensions import db, api
 from dotenv import load_dotenv
 load_dotenv()
+from flask_migrate import Migrate
 
 
 app = Flask(__name__)
 import resources
 
+migrate = Migrate(app, db)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:ariari@127.0.0.1:3306/moviedb"
 db.init_app(app)

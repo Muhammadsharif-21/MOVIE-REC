@@ -2,18 +2,327 @@
 <html lang="en">
 
 <head>
-  <title>Document</title>
+  <title>Watchlist</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #14171f;
+      --surface: #1c2030;
+      --surface-raised: #232840;
+      --stub-line: #343b57;
+      --gold: #e8b84b;
+      --rose: #e2617a;
+      --text: #eeece4;
+      --text-dim: #8b8fa8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      background-image:
+        radial-gradient(circle at 15% 0%, rgba(232, 184, 75, 0.06), transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(226, 97, 122, 0.06), transparent 40%);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      padding: 48px 24px 96px;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.6rem, 6vw, 4.4rem);
+      letter-spacing: 0.04em;
+      margin: 0 0 4px;
+      color: var(--text);
+    }
+
+    h1::after {
+      content: "NOW SCREENING";
+      display: block;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.4em;
+      color: var(--gold);
+      margin-top: 6px;
+    }
+
+    h2 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin: 48px 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h2::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--stub-line);
+    }
+
+    .max {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    /* controls bar */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input, select {
+      background: var(--surface);
+      border: 1px solid var(--stub-line);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      padding: 10px 14px;
+      border-radius: 3px;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--gold);
+    }
+
+    input::placeholder { color: var(--text-dim); }
+
+    button {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid var(--stub-line);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    button.primary {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #14171f;
+      font-weight: 600;
+    }
+
+    button.primary:hover {
+      background: #f0c66a;
+      color: #14171f;
+    }
+
+    button.danger:hover {
+      border-color: var(--rose);
+      color: var(--rose);
+    }
+
+    /* ticket stub card */
+    #shows-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 22px;
+      margin-top: 8px;
+    }
+
+    .stub {
+      background: var(--surface);
+      border-radius: 6px;
+      position: relative;
+      padding: 20px 20px 18px;
+      border: 1px solid var(--stub-line);
+    }
+
+    .stub::after {
+      content: "";
+      position: absolute;
+      left: -9px;
+      top: 22px;
+      width: 18px;
+      height: 18px;
+      background: var(--bg);
+      border-radius: 50%;
+      border: 1px solid var(--stub-line);
+    }
+
+    .stub-head {
+      padding-bottom: 18px;
+      border-bottom: 2px dashed var(--stub-line);
+      margin-bottom: 18px;
+    }
+
+    .stub-avg {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--gold);
+      margin-top: 8px;
+    }
+
+    .stub-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      margin: 0 0 8px;
+    }
+
+    .stub-meta {
+      display: flex;
+      gap: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .badge {
+      border: 1px solid var(--stub-line);
+      border-radius: 20px;
+      padding: 3px 10px;
+    }
+
+    .badge.status-watching { color: var(--gold); border-color: var(--gold); }
+    .badge.status-completed { color: #7fd99a; border-color: #7fd99a; }
+    .badge.status-dropped { color: var(--rose); border-color: var(--rose); }
+
+    .stub-body {
+      padding-top: 22px;
+    }
+
+    .edit-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .edit-row input {
+      width: 100%;
+      min-width: 0;
+      padding: 7px 10px;
+      font-size: 0.8rem;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 4px;
+    }
+
+    .action-row button { flex: 1; padding: 8px; font-size: 0.65rem; }
+
+    .reviews {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .review {
+      background: var(--surface-raised);
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+    }
+
+    .review-rating {
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--gold);
+      font-weight: 600;
+      margin-right: 6px;
+    }
+
+    .review .edit-row {
+      grid-template-columns: 70px 1fr;
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+
+    .add-review-row {
+      display: grid;
+      grid-template-columns: 70px 1fr auto;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .add-review-row input {
+      width: 100%;
+      min-width: 0;
+      padding: 8px 10px;
+      font-size: 0.8rem;
+    }
+
+    .empty-note {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      text-align: center;
+      padding: 30px 0;
+      grid-column: 1 / -1;
+    }
+  </style>
 </head>
 
 <body>
-  <h1> My Movie/Anime Watchlist </h1>
-  <div id="shows-container"></div>
-  <h2> Add a Show </h2>
-  <input type="text" id="title-input" placeholder="Title">
-  <input type="text" id="genre-input" placeholder="Genre">
-  <input type="text" id="status-input" placeholder="Status (watching/completed/dropped)">
-  <button onclick="addShow()">Add Show</button>
-</body>
+  <div class="max">
+    <h1>Watchlist</h1>
+
+    <h2>Filter</h2>
+    <div class="controls">
+      <input type="text" id="search-title" placeholder="Search title…">
+      <select id="filter-status">
+        <option value="">All statuses</option>
+        <option value="watching">Watching</option>
+        <option value="completed">Completed</option>
+        <option value="dropped">Dropped</option>
+      </select>
+      <select id="sort-field">
+        <option value="">No sort</option>
+        <option value="title">Title A–Z</option>
+        <option value="-title">Title Z–A</option>
+        <option value="rating">Rating low–high</option>
+        <option value="-rating">Rating high–low</option>
+      </select>
+      <button class="primary" onclick="loadShows()">Apply</button>
+    </div>
+
+    <h2>Now Tracking</h2>
+    <div id="shows-container"></div>
+    <div class="controls" style="margin-top: 16px;">
+      <button onclick="prevPage()">&larr; Prev</button>
+      <span id="page-label" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--text-dim);">Page 1</span>
+      <button onclick="nextPage()">Next &rarr;</button>
+    </div>
+
+    <h2>Add a Show</h2>
+    <div class="controls">
+      <input type="text" id="title-input" placeholder="Title">
+      <input type="text" id="genre-input" placeholder="Genre">
+      <input type="text" id="status-input" placeholder="watching / completed / dropped">
+      <button class="primary" onclick="addShow()">Add Show</button>
+    </div>
+  </div>
+
 <script>
   function addShow() {
     const title = document.getElementById('title-input').value;
@@ -25,37 +334,105 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: title, genre: genre, status: status })
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Added:', data);
+      .then(response => response.json().then(data => ({ ok: response.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) {
+          alert(data.message || 'Something went wrong adding this show.');
+          return;
+        }
+        document.getElementById('title-input').value = '';
+        document.getElementById('genre-input').value = '';
+        document.getElementById('status-input').value = '';
         loadShows();
       });
   }
 
+  let currentPage = 1;
+
+  function nextPage() {
+    currentPage++;
+    loadShows();
+  }
+
+  function prevPage() {
+    if (currentPage > 1) currentPage--;
+    loadShows();
+  }
+
   function loadShows() {
-    fetch('/api/shows/')
+    const title = document.getElementById('search-title').value;
+    const status = document.getElementById('filter-status').value;
+    const sort = document.getElementById('sort-field').value;
+
+    const params = new URLSearchParams();
+    if (title) params.append('title', title);
+    if (status) params.append('status', status);
+    if (sort) params.append('sort', sort);
+    params.append('page', currentPage);
+    params.append('per_page', 6);
+
+    document.getElementById('page-label').textContent = `Page ${currentPage}`;
+
+    fetch(`/api/shows/?${params.toString()}`)
       .then(response => response.json())
       .then(data => {
         const container = document.getElementById('shows-container');
+
+        if (data.length === 0) {
+          container.innerHTML = `<p class="empty-note">No shows match. Add one below.</p>`;
+          return;
+        }
+
         const html = data.map(show => `
-  <div>
-    <h3>${show.title}</h3>
-
-    <input type="text" id="edit-title-${show.id}" value="${show.title}">
-    <input type="text" id="edit-genre-${show.id}" value="${show.genre}">
-    <input type="text" id="edit-status-${show.id}" value="${show.status}">
-    <button onclick="editShow(${show.id})">Save Changes</button>
-    <button onclick="deleteShow(${show.id})">Delete Show</button>
-
-    <div id="reviews-${show.id}"></div>
-
-    <input type="number" id="rating-input-${show.id}" placeholder="Rating 1-10">
-    <input type="text" id="notes-input-${show.id}" placeholder="Notes">
-    <button onclick="addReview(${show.id})">Add Review</button>
+  <div class="stub">
+    <div class="stub-head">
+      <h3 class="stub-title">${show.title}</h3>
+      <div class="stub-meta">
+        <span class="badge">${show.genre}</span>
+        <span class="badge status-${show.status}">${show.status}</span>
       </div>
+      <div class="stub-avg" id="avg-${show.id}"></div>
+    </div>
+    <div class="stub-body">
+      <div class="edit-row">
+        <input type="text" id="edit-title-${show.id}" value="${show.title}">
+        <input type="text" id="edit-genre-${show.id}" value="${show.genre}">
+        <input type="text" id="edit-status-${show.id}" value="${show.status}">
+      </div>
+      <div class="action-row">
+        <button onclick="editShow(${show.id})">Save</button>
+        <button class="danger" onclick="deleteShow(${show.id})">Delete</button>
+      </div>
+
+      <div class="reviews" id="reviews-${show.id}"></div>
+
+      <div class="add-review-row">
+        <input type="number" id="rating-input-${show.id}" placeholder="1-10">
+        <input type="text" id="notes-input-${show.id}" placeholder="Notes">
+        <button onclick="addReview(${show.id})">Add</button>
+      </div>
+    </div>
+  </div>
       `).join('');
         container.innerHTML = html;
-        data.forEach(show => loadReviews(show.id));
+        data.forEach(show => {
+          loadReviews(show.id);
+          loadStats(show.id);
+        });
+      });
+  }
+
+  function loadStats(showId) {
+    fetch(`/api/shows/${showId}/stats`)
+      .then(response => response.json())
+      .then(data => {
+        const el = document.getElementById(`avg-${showId}`);
+        if (!el) return;
+        if (data.average_rating === null) {
+          el.textContent = 'No ratings yet';
+        } else {
+          el.textContent = `Avg ${data.average_rating}/10`;
+        }
       });
   }
 
@@ -95,12 +472,16 @@
     .then(reviews => {
       const container = document.getElementById(`reviews-${showId}`);
       const html = reviews.map(review => `
-        <div>
-          <p>Rating: ${review.rating} - ${review.notes}</p>
-          <input type="number" id="edit-rating-${review.id}" value="${review.rating}">
-          <input type="text" id="edit-notes-${review.id}" value="${review.notes}">
-          <button onclick="editReview(${review.id}, ${showId})">Save</button>
-          <button onclick="deleteReview(${review.id}, ${showId})">Delete</button>
+        <div class="review">
+          <span class="review-rating">${review.rating}/10</span>${review.notes}
+          <div class="edit-row">
+            <input type="number" id="edit-rating-${review.id}" value="${review.rating}">
+            <input type="text" id="edit-notes-${review.id}" value="${review.notes}">
+          </div>
+          <div class="action-row">
+            <button onclick="editReview(${review.id}, ${showId})">Save</button>
+            <button class="danger" onclick="deleteReview(${review.id}, ${showId})">Delete</button>
+          </div>
         </div>
       `).join('');
       container.innerHTML = html;
@@ -116,10 +497,14 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rating: parseInt(rating), notes: notes })
     })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Review added:', data);
+    .then(response => response.json().then(data => ({ ok: response.ok, data })))
+    .then(({ ok, data }) => {
+      if (!ok) {
+        alert(data.message || 'Something went wrong adding this review.');
+        return;
+      }
       loadReviews(showId);
+      loadStats(showId);
     });
   }
 
