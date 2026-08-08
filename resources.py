@@ -54,36 +54,38 @@ login_args.add_argument("email", type=str, required=True, help="Email is require
 login_args.add_argument("password", type=str, required=True, help="Password is required")
 
 class ShowlistResource(Resource):
-    @login_required
     @marshal_with(showFields)
     def get(self):
-        ...
+        status = request.args.get("status")
+        title = request.args.get("title")
+        sort = request.args.get("sort")
+        page = request.args.get("page", 1, type=int)
+        per_page = request.args.get("per_page", 10, type=int)
 
-    @login_required
-    @marshal_with(showFields)
-    def post(self):
-        args = show_args.parse_args()
+        query = Show.query
 
-        existing = Show.query.filter(Show.title.ilike(args['title'])).first()
-        if existing:
-            abort(409, message="Show aleardy exists")
-        response = requests.get(f"http://www.omdbapi.com/?t={args['title']}&apikey={OMDB_KEY}")
-        data = response.json()
-        if data.get("Response") == "False":
-            abort(404, message="Show not found on OMDb")
+        if status:
+            query = query.filter_by(status=status)
 
-        show = Show(title=args["title"],
-                    genre=args["genre"],
-                    status=args["status"],
-                    poster_url=data.get("Poster"),
-                    plot=data.get("Plot"),
-                    imdb_rating=data.get("imdbRating"),
-                    year=data.get("Year"),
-                    user_id=current_user.id
-                    )
-        db.session.add(show)
-        db.session.commit()
-        return show, 201
+        if title:
+            query = query.filter(Show.title.ilike(f"%{title}%"))
+
+        if sort:
+            field_name = sort.lstrip("-")
+            descending = sort.startswith("-")
+            if field_name == "rating":
+                query = query.join(Review, Show.id == Review.show_id).group_by(Show.id)
+                if descending:
+                    query = query.order_by(func.avg(Review.rating).desc())
+                else:
+                    query = query.order_by(func.avg(Review.rating))
+            else:
+                column = getattr(Show, field_name, None)
+                if column is not None:
+                    query = query.order_by(column.desc() if descending else column)
+
+        shows = query.paginate(page=page, per_page=per_page, error_out=False)
+        return shows.items
 
 
 
@@ -254,4 +256,4 @@ api.add_resource(Register, "/api/register")
 api.add_resource(Login, "/api/login")
 api.add_resource(Logout, "/api/logout")
 api.add_resource(Me, "/api/me")
-api.add_resource(ResetMyShows, "/api/resetshows")
+api.add_resource(ResetMyShows, "/api/reset")
