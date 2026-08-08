@@ -231,6 +231,20 @@ class Logout(Resource):
         logout_user()
         return {"message": "Logged out"}, 200
 
+
+class Me(Resource):
+    def get(self):
+        if current_user.is_authenticated:
+            return {"Logged_in": True, "user_id": current_user.id, "name": current_user.name}, 200
+        return {"Logged_in": False}, 200    
+
+class ResetMyShows(Resource):
+    @login_required
+    def delete(self):
+        Show.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+        return {"message": "All your shows have been deleted"}, 200
+
 api.add_resource(ShowlistResource, "/api/shows/")
 api.add_resource(ShowResource, "/api/shows/<int:id>")
 api.add_resource(ReviewListShow, "/api/shows/<int:show_id>/reviews")
@@ -239,3 +253,5 @@ api.add_resource(ShowStatsResource, "/api/shows/<int:show_id>/stats")
 api.add_resource(Register, "/api/register")
 api.add_resource(Login, "/api/login")
 api.add_resource(Logout, "/api/logout")
+api.add_resource(Me, "/api/me")
+api.add_resource(ResetMyShows, "/api/resetshows")

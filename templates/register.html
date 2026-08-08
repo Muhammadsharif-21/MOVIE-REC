@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Watchlist{% endblock %}
+
+{% block content %}
+  <h2>Register</h2>
+  <div class="controls">
+    <input type="text" id="register-name" placeholder="Name">
+    <input type="text" id="register-email" placeholder="Email">
+    <input type="password" id="register-password" placeholder="Password">
+    <button class="primary" onclick="register()">Register</button>
+  </div>
+  <span class="auth-link">Already have an account? <a href="/login">Login</a></span>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/register.js') }}"></script>
+{% endblock %}

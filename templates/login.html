@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Watchlist{% endblock %}
+
+{% block content %}
+  <h2>Login</h2>
+  <div class="controls">
+    <input type="text" id="login-email" placeholder="Email">
+    <input type="password" id="login-password" placeholder="Password">
+    <button class="primary" onclick="login()">Login</button>
+  </div>
+  <span class="auth-link">Don't have an account? <a href="/register">Register</a></span>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}

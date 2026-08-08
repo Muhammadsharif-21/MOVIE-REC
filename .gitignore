@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .env
 static/
+
+
+
+so my omdb key is woking because im getting the data in the sql table the link and the deatil section but the thig is om not getting any response on the page and also some fixes like after loggin in the login button keeps showing wich dont make any sense and also yeah we gotta fix this issue of imags and data not loading into the page 
