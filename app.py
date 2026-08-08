@@ -19,8 +19,12 @@ bcrypt.init_app(app)
 Login_manager.init_app(app)
 
 
-from models import Show, Review
+from models import Show, Review, User
 
+#Flask login loads user data from db to User object using this function
+@Login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 @app.route("/")
 def home():
