@@ -2,6 +2,7 @@ from flask import Flask, render_template
 from extensions import db, api, bcrypt, Login_manager
 from dotenv import load_dotenv
 
+
 load_dotenv()
 from flask_migrate import Migrate
 
@@ -10,6 +11,7 @@ import resources
 
 migrate = Migrate(app, db)
 
+app.config["SECRET_KEY"] = "mysecretkey"
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "mysql+pymysql://root:ariari@127.0.0.1:3306/moviedb"
 )

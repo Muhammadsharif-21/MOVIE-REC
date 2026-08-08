@@ -1,11 +1,15 @@
-from models import Show, Review
+from models import Show, Review, User
 from flask_restful import Resource, reqparse, fields, marshal_with, abort
-from extensions import db, api
+from extensions import db, api, bcrypt
 from sqlalchemy import func
 import os
 import requests
 from dotenv import load_dotenv
 from flask import request
+from flask_login import login_user
+from flask_login import logout_user, login_required
+
+
 
 OMDB_KEY = os.getenv("OMDB_API_KEY") 
 
@@ -40,8 +44,17 @@ review_args = reqparse.RequestParser()
 review_args.add_argument("rating", type=int, required=True, help="Rating is required")
 review_args.add_argument("notes", type=str, required=False, help="Notes are required")
 
+user_args = reqparse.RequestParser()
+user_args.add_argument("name", type=str, required=True, help="Name is required")
+user_args.add_argument("email", type=str, required=True, help="Email is required")
+user_args.add_argument("password", type=str, required=True, help="Password is required")
+
+login_args = reqparse.RequestParser()
+login_args.add_argument("email", type=str, required=True, help="Email is required")
+login_args.add_argument("password", type=str, required=True, help="Password is required")
 
 class ShowlistResource(Resource):
+    @login_required
     @marshal_with(showFields)
     def get(self):
         status = request.args.get("status")
@@ -193,10 +206,50 @@ class ShowStatsResource(Resource):
             return {"show_id": show_id, "average_rating": None, "message": "No reviews yet"}, 200
         return {"show_id": show_id, "average_rating": round(float(avg_rating), 2)}, 200
         
-        
+
+
+class Register(Resource):
+    def post(self):
+        args = user_args.parse_args()
+
+        existing = User.query.filter_by(email=args["email"]).first()
+        if existing:
+            abort(409, message="Email, already registered")
+
+        hashed_pass = bcrypt.generate_password_hash(args['password']).decode('utf-8')   
+
+        user = User(name=args["name"], email=args["email"], password=hashed_pass)   
+        db.session.add(user)
+        db.session.commit()
+
+        login_user(user)
+
+        return {"message": "User created", "user_id": user.id}, 201
+
+
+class Login(Resource):
+    def post(self):
+        args = login_args.parse_args()
+        user = User.query.filter_by(email=args["email"]).first()
+        if not user:
+            return {"message": "Invalid credentials"}, 401
+        if not bcrypt.check_password_hash(user.password, args["password"]):
+            return {"message": "Invalid credentials"}, 401
+
+        login_user(user) 
+        return {"messsage": "Logged in", "user_id": user.id}, 200    
+
+class Logout(Resource):
+    @login_required
+    def post(self):
+        logout_user()
+        return {"message": "Logged out"}, 200
 
 api.add_resource(ShowlistResource, "/api/shows/")
 api.add_resource(ShowResource, "/api/shows/<int:id>")
 api.add_resource(ReviewListShow, "/api/shows/<int:show_id>/reviews")
 api.add_resource(ReviewShow, "/api/reviews/<int:id>")
 api.add_resource(ShowStatsResource, "/api/shows/<int:show_id>/stats")
+api.add_resource(Register, "/api/register")
+api.add_resource(Login, "/api/login")
+api.add_resource(Logout, "/api/logout")
