@@ -87,6 +87,32 @@ class ShowlistResource(Resource):
         shows = query.paginate(page=page, per_page=per_page, error_out=False)
         return shows.items
 
+    @login_required
+    @marshal_with(showFields)
+    def post(self):
+        args = show_args.parse_args()
+
+        existing = Show.query.filter(Show.title.ilike(args['title'])).first()
+        if existing:
+            abort(409, message="Show already exists")
+        response = requests.get(f"http://www.omdbapi.com/?t={args['title']}&apikey={OMDB_KEY}")
+        data = response.json()
+        if data.get("Response") == "False":
+            abort(404, message="Show not found on OMDb")
+
+        show = Show(
+            title=args["title"],
+            genre=args["genre"],
+            status=args["status"],
+            poster_url=data.get("Poster"),
+            plot=data.get("Plot"),
+            imdb_rating=data.get("imdbRating"),
+            year=data.get("Year"),
+            user_id=current_user.id
+        )
+        db.session.add(show)
+        db.session.commit()
+        return show, 201
 
 
 
@@ -139,11 +165,17 @@ class ReviewListShow(Resource):
     
     @marshal_with(reviewFields)
     @login_required
+    @marshal_with(reviewFields)
     def post(self, show_id):
         args = review_args.parse_args()
-        if args["rating"] < 1 or args["rating"] > 10:
-            abort(400, message="Rating must be betweeen 1 and 10")
-        review = Review(show_id=show_id, rating=args["rating"], notes=args["notes"])
+        if args["rating"] is None or args["rating"] < 1 or args["rating"] > 10:
+            abort(400, message="Rating must be between 1 and 10")
+        review = Review(
+            show_id=show_id,
+            rating=args["rating"],
+            notes=args["notes"],
+            user_id=current_user.id
+        )
         db.session.add(review)
         db.session.commit()
         return review, 201
@@ -160,8 +192,8 @@ class ReviewShow(Resource):
     @marshal_with(reviewFields)
     def patch(self, id):
         args = review_args.parse_args()
-        if args["rating"] < 1 or args["rating"] > 10:
-            abort(400, message="Rating must be betweeen 1 and 10")
+        if args["rating"] is None or args["rating"] < 1 or args["rating"] > 10:
+            abort(400, message="Rating must be between 1 and 10")
         review = Review.query.filter_by(id=id).first()
         if not review:
             abort(404, message="Review not found")
@@ -237,8 +269,8 @@ class Logout(Resource):
 class Me(Resource):
     def get(self):
         if current_user.is_authenticated:
-            return {"Logged_in": True, "user_id": current_user.id, "name": current_user.name}, 200
-        return {"Logged_in": False}, 200    
+            return {"logged_in": True, "user_id": current_user.id, "name": current_user.name}, 200
+        return {"logged_in": False}, 200    
 
 class ResetMyShows(Resource):
     @login_required
