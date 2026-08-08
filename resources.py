@@ -7,7 +7,7 @@ import requests
 from dotenv import load_dotenv
 from flask import request
 from flask_login import login_user
-from flask_login import logout_user, login_required
+from flask_login import logout_user, login_required, current_user
 
 
 
@@ -20,7 +20,7 @@ showFields = {
     "status": fields.String,
     "poster_url": fields.String,
     "plot": fields.String,
-    "imbd_rating": fields.String,
+    "imdb_rating": fields.String,
     "year": fields.String,
 }
 
@@ -57,37 +57,9 @@ class ShowlistResource(Resource):
     @login_required
     @marshal_with(showFields)
     def get(self):
-        status = request.args.get("status")
-        title = request.args.get("title")
-        sort = request.args.get("sort")
-        page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 10, type=int)
+        ...
 
-        query = Show.query
-
-        if status:
-            query = query.filter_by(status=status)
-
-        if title:
-            query = query.filter(Show.title.ilike(f"%{title}%"))
-
-        if sort:
-            field_name = sort.lstrip("-")
-            descending = sort.startswith("-")
-            if field_name == "rating":
-                query = query.join(Review, Show.id == Review.show_id).group_by(Show.id)
-                if descending:
-                    query = query.order_by(func.avg(Review.rating).desc())
-                else:
-                    query = query.order_by(func.avg(Review.rating))  
-            
-            else:
-                column = getattr(Show, field_name, None)
-                if column is not None:
-                    query = query.order_by(column.desc() if descending else column)
-        shows = query.paginate(page=page, per_page=per_page, error_out=False)
-        return shows.items
-
+    @login_required
     @marshal_with(showFields)
     def post(self):
         args = show_args.parse_args()
@@ -107,11 +79,11 @@ class ShowlistResource(Resource):
                     plot=data.get("Plot"),
                     imdb_rating=data.get("imdbRating"),
                     year=data.get("Year"),
+                    user_id=current_user.id
                     )
         db.session.add(show)
         db.session.commit()
         return show, 201
-
 
 
 
@@ -125,11 +97,14 @@ class ShowResource(Resource):
         return show    
 
     @marshal_with(showFields)
+    @login_required
     def patch(self, id):
         args = show_args.parse_args()
         show = Show.query.filter_by(id=id).first()
         if not show:
             abort(404, message="Show not found.") 
+        if show.user_id != current_user.id:
+            abort(403, message="You don't have permission to patch the show")        
         show.title = args["title"]    
         show.genre = args["genre"]    
         show.status = args["status"]    
@@ -139,10 +114,14 @@ class ShowResource(Resource):
 
     
     @marshal_with(showFields)
+    @login_required
     def delete(self, id):
         show = Show.query.filter_by(id=id).first()
         if not show:
             abort(404, message="Show not found.") 
+
+        if show.user_id != current_user.id:
+            abort(403, message="You don't have permission to delete the show")    
         db.session.delete(show)
         db.session.commit()  
         shows = Show.query.all()
@@ -157,6 +136,7 @@ class ReviewListShow(Resource):
         return reviews
     
     @marshal_with(reviewFields)
+    @login_required
     def post(self, show_id):
         args = review_args.parse_args()
         if args["rating"] < 1 or args["rating"] > 10:
@@ -174,6 +154,7 @@ class ReviewShow(Resource):
             abort(404, message="Review not found")
         return review    
 
+    @login_required
     @marshal_with(reviewFields)
     def patch(self, id):
         args = review_args.parse_args()
@@ -182,6 +163,9 @@ class ReviewShow(Resource):
         review = Review.query.filter_by(id=id).first()
         if not review:
             abort(404, message="Review not found")
+        if review.user_id != current_user.id:
+            abort(403, message="You  don't have permission to edit this review")
+
         review.rating = args["rating"]
         review.notes = args["notes"]
         db.session.add(review)
@@ -193,6 +177,8 @@ class ReviewShow(Resource):
         review = Review.query.filter_by(id=id).first()
         if not review:
             abort(404, message="Review not found")
+        if review.user_id != current_user.id:
+            abort(403, message="You don't have permission to delete this review")    
         db.session.delete(review)
         db.session.commit()
         return review
